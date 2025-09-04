@@ -1,0 +1,7 @@
+streamlit
+pandas
+numpy
+category_encoders
+joblib
+scikit-learn == 1.6.1
+

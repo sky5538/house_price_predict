@@ -7,12 +7,10 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import joblib
-import os
 
 st.title("🏡 Train & Evaluate Models")
 
-# 上传训练与测试数据
+# 上传训练和测试数据
 train_file = st.file_uploader("Upload Training Data (CSV)", type=["csv"])
 test_file = st.file_uploader("Upload Testing Data (CSV)", type=["csv"])
 
@@ -21,7 +19,6 @@ if train_file and test_file:
     test_df = pd.read_csv(test_file)
     target_col = "Price"
 
-    # 自动识别分类列和数值列
     categorical_cols = train_df.select_dtypes(include=["object", "category"]).columns.tolist()
     numeric_cols = [c for c in train_df.columns if c not in categorical_cols + [target_col]]
 
@@ -62,7 +59,7 @@ if train_file and test_file:
     y_pred_gb = gb_pipeline.predict(X_test)
 
     # -------------------------------
-    # 评估函数（归一化 RMSE、NMAE %）
+    # 评估函数（归一化 RMSE / NMAE %）
     # -------------------------------
     def evaluate(y_true, y_pred, name):
         mse = mean_squared_error(y_true, y_pred)
@@ -70,36 +67,21 @@ if train_file and test_file:
         mae = mean_absolute_error(y_true, y_pred)
         r2 = r2_score(y_true, y_pred)
         mean_y = y_true.mean()
-        nrmse = rmse / mean_y      # 归一化 RMSE
-        nmae = mae / mean_y * 100  # NMAE %
-        return {
-            "Model": name,
-            "R²": round(r2, 4),
-            "RMSE": round(nrmse, 4),
-            "MAE (%)": round(nmae, 2)
-        }
+        nrmse = rmse / mean_y
+        nmae = mae / mean_y * 100
+        return {"Model": name, "R²": round(r2,4), "NRMSE": round(nrmse,4), "NMAE (%)": round(nmae,2)}
 
-    # -------------------------------
-    # 汇总结果
-    # -------------------------------
     results = [
         evaluate(y_test, y_pred_lin, "Linear Regression"),
         evaluate(y_test, y_pred_rf, "Random Forest"),
         evaluate(y_test, y_pred_gb, "Gradient Boosting")
     ]
+
     st.subheader("📑 Model Performance Comparison")
     st.dataframe(pd.DataFrame(results))
 
     # -------------------------------
-    # 保存模型到文件
-    # -------------------------------
-    os.makedirs("models", exist_ok=True)
-    joblib.dump(lin_pipeline, "models/lin_pipeline.pkl")
-    joblib.dump(rf_pipeline, "models/rf_pipeline.pkl")
-    joblib.dump(gb_pipeline, "models/gb_pipeline.pkl")
-
-    # -------------------------------
-    # 保存模型到 session_state，方便 Streamlit Cloud Predict 页面使用
+    # 保存模型到 session_state
     # -------------------------------
     st.session_state["trained_models"] = {
         "Linear Regression": lin_pipeline,
@@ -107,4 +89,11 @@ if train_file and test_file:
         "Gradient Boosting": gb_pipeline
     }
 
-    st.success("✅ Models trained and saved to session_state.")
+    # 保存 Linear Regression 的列顺序，用于预测
+    # 利用 OneHotEncoder 的 get_feature_names_out 获取列名
+    lin_columns = list(lin_pipeline.named_steps["preprocessor"].get_feature_names_out())
+    # 加上 numeric_cols
+    lin_columns += numeric_cols
+    st.session_state["lin_columns"] = lin_columns
+
+    st.success("✅ Models trained and saved in session state.")

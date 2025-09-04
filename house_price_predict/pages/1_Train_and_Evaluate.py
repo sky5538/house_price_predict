@@ -62,7 +62,7 @@ if train_file and test_file:
     y_pred_gb = gb_pipeline.predict(X_test)
 
     # -------------------------------
-    # 评估函数（RMSE、MAE 归一化，NMAE 显示 %）
+    # 评估函数（归一化 RMSE、NMAE %）
     # -------------------------------
     def evaluate(y_true, y_pred, name):
         mse = mean_squared_error(y_true, y_pred)
@@ -83,20 +83,28 @@ if train_file and test_file:
     # 汇总结果
     # -------------------------------
     results = [
-        evaluate(y_test, y_pred_lin, "Linear Regression "),
-        evaluate(y_test, y_pred_rf, "Random Forest "),
-        evaluate(y_test, y_pred_gb, "Gradient Boosting ")
+        evaluate(y_test, y_pred_lin, "Linear Regression"),
+        evaluate(y_test, y_pred_rf, "Random Forest"),
+        evaluate(y_test, y_pred_gb, "Gradient Boosting")
     ]
-
     st.subheader("📑 Model Performance Comparison")
     st.dataframe(pd.DataFrame(results))
 
     # -------------------------------
-    # 保存模型
+    # 保存模型到文件
     # -------------------------------
     os.makedirs("models", exist_ok=True)
     joblib.dump(lin_pipeline, "models/lin_pipeline.pkl")
     joblib.dump(rf_pipeline, "models/rf_pipeline.pkl")
     joblib.dump(gb_pipeline, "models/gb_pipeline.pkl")
 
-    st.success("✅ Models trained.")
+    # -------------------------------
+    # 保存模型到 session_state，方便 Streamlit Cloud Predict 页面使用
+    # -------------------------------
+    st.session_state["trained_models"] = {
+        "Linear Regression": lin_pipeline,
+        "Random Forest": rf_pipeline,
+        "Gradient Boosting": gb_pipeline
+    }
+
+    st.success("✅ Models trained and saved to session_state.")

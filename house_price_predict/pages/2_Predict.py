@@ -1,29 +1,19 @@
 import os
 import streamlit as st
 import pandas as pd
-import joblib
 
 st.title("🏡 Predict Malaysia House Price")
 
 # ------------------------------
-# 加载模型
+# 从 session_state 获取模型
 # ------------------------------
-try:
-    lin_pipeline = joblib.load("models/lin_pipeline.pkl")  # Linear Regression + OHE
-    rf_pipeline = joblib.load("models/rf_model.pkl")
-    gb_pipeline = joblib.load("models/gb_pipeline.pkl")
-    lin_columns = joblib.load("models/lin_columns.pkl")   # Linear Regression 的列顺序
-except:
-    st.error("⚠️ Please train models first in 'Train & Evaluate' page. Make sure 'models/' folder exists.")
+if "trained_models" in st.session_state:
+    models = st.session_state["trained_models"]
+else:
+    st.error("⚠️ Please train models first in 'Train & Evaluate' page.")
     st.stop()
 
-models = {
- "Random Forest": rf_pipeline,
-    "Linear Regression": lin_pipeline,
-   
-    "Gradient Boosting": gb_pipeline
-}
-
+# 模型名称选择
 selected_model_name = st.selectbox("Choose Model:", list(models.keys()))
 chosen_model = models[selected_model_name]
 
@@ -58,35 +48,31 @@ if st.button("Predict Price"):
         }])
 
         # ------------------------------
-        # Linear Regression (OHE) 自动补列
+        # Linear Regression (OHE)
         # ------------------------------
         if selected_model_name == "Linear Regression":
-            # 补齐训练时的所有列
+            # session_state 里存的列顺序
+            lin_columns = st.session_state.get("lin_columns", list(new_data.columns))
+            # 补齐缺失列
             for col in lin_columns:
                 if col not in new_data.columns:
                     new_data[col] = 0
-
-            # 将 tenure/type 对应列设为 1
             new_data[tenure] = 1
             new_data[house_type] = 1
-
             # 保证列顺序
             new_data = new_data[lin_columns]
 
         # ------------------------------
-        # Random Forest / Gradient Boosting 自动补列
+        # Random Forest / Gradient Boosting
         # ------------------------------
-        elif selected_model_name in ["Random Forest", "Gradient Boosting"]:
-            # 构建 OHE 列
+        else:
             tenure_cols = ["Freehold", "Leasehold"]
             type_cols = ["Terrace House","Cluster House","Semi D","Bungalow",
                          "Service Residence","Flat","Town House","Apartment","Condominium"]
             ohe_dict = {col: 0 for col in tenure_cols + type_cols}
             ohe_dict[tenure] = 1
             ohe_dict[house_type] = 1
-
-            # 补 Transactions 列为 0
-            ohe_dict["Transactions"] = 0
+            ohe_dict["Transactions"] = 0  # 自动补 Transactions 列
 
             new_data = pd.DataFrame([{
                 "Township": township,

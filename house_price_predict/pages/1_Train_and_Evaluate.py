@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 st.title("🏡 Train & Evaluate Models")
 
-# 上传训练和测试数据
+# Upload training and testing data
 train_file = st.file_uploader("Upload Training Data (CSV)", type=["csv"])
 test_file = st.file_uploader("Upload Testing Data (CSV)", type=["csv"])
 
@@ -59,7 +59,7 @@ if train_file and test_file:
     y_pred_gb = gb_pipeline.predict(X_test)
 
     # -------------------------------
-    # 评估函数（归一化 RMSE / NMAE %）
+    # Evaluation function (Normalized RMSE / NMAE %)
     # -------------------------------
     def evaluate(y_true, y_pred, name):
         mse = mean_squared_error(y_true, y_pred)
@@ -81,7 +81,7 @@ if train_file and test_file:
     st.dataframe(pd.DataFrame(results))
 
     # -------------------------------
-    # 保存模型到 session_state
+    # Save models to session_state
     # -------------------------------
     st.session_state["trained_models"] = {
         "Linear Regression": lin_pipeline,
@@ -89,10 +89,10 @@ if train_file and test_file:
         "Gradient Boosting": gb_pipeline
     }
 
-    # 保存 Linear Regression 的列顺序，用于预测
-    # 利用 OneHotEncoder 的 get_feature_names_out 获取列名
+    # Save Linear Regression column order for prediction
+    # Use OneHotEncoder's get_feature_names_out to get column names
     lin_columns = list(lin_pipeline.named_steps["preprocessor"].get_feature_names_out())
-    # 加上 numeric_cols
+    # Add numeric columns
     lin_columns += numeric_cols
     st.session_state["lin_columns"] = lin_columns
 

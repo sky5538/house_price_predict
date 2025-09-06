@@ -8,7 +8,7 @@ import os
 st.title("🏡 Malaysia House Price Prediction")
 
 # ------------------------------
-# GitHub raw 链接
+# GitHub raw links
 # ------------------------------
 GITHUB_BASE = "https://github.com/sky5538/house_price_predict/raw/main/house_price_predict/models/"
 
@@ -20,7 +20,7 @@ MODEL_FILES = {
 }
 
 # ------------------------------
-# 从 GitHub 加载模型函数
+# Function to load model from GitHub
 # ------------------------------
 @st.cache_data(show_spinner=True)
 def load_model(file_name):
@@ -30,7 +30,7 @@ def load_model(file_name):
     return joblib.load(BytesIO(response.content))
 
 # ------------------------------
-# 加载模型
+# Load models
 # ------------------------------
 try:
     lin_pipeline = load_model(MODEL_FILES["Linear Regression"])
@@ -51,7 +51,7 @@ selected_model_name = st.selectbox("Choose Model:", list(models.keys()))
 chosen_model = models[selected_model_name]
 
 # ------------------------------
-# 用户输入
+# User inputs
 # ------------------------------
 township = st.text_input("Enter Township:")
 area = st.text_input("Enter Area:")
@@ -69,12 +69,12 @@ house_types = ["Terrace House","Cluster House","Semi D","Bungalow",
 house_type = st.selectbox("Select House Type:", house_types)
 
 # ------------------------------
-# 预测按钮
+# Predict button
 # ------------------------------
 if st.button("Predict Price"):
     try:
         # ------------------------------
-        # 统一用户输入大小写
+        # Standardize user input capitalization
         # ------------------------------
         township = township.strip().title()
         area = area.strip().title()
@@ -82,7 +82,7 @@ if st.button("Predict Price"):
         tenure = tenure.strip().title()
         house_type = house_type.strip().title()
 
-        # 构建基础输入
+        # Construct base input
         new_data = pd.DataFrame([{
             "Township": township,
             "Area": area,
@@ -91,7 +91,7 @@ if st.button("Predict Price"):
         }])
 
         # ------------------------------
-        # Linear Regression 自动补列
+        # Linear Regression auto-fill columns
         # ------------------------------
         if selected_model_name == "Linear Regression":
             for col in lin_columns:
@@ -102,7 +102,7 @@ if st.button("Predict Price"):
             new_data = new_data[lin_columns]
 
         # ------------------------------
-        # Random Forest / Gradient Boosting 自动补列
+        # Random Forest / Gradient Boosting auto-fill columns
         # ------------------------------
         elif selected_model_name in ["Random Forest", "Gradient Boosting"]:
             tenure_cols = ["Freehold", "Leasehold"]
@@ -111,7 +111,7 @@ if st.button("Predict Price"):
             ohe_dict = {col: 0 for col in tenure_cols + type_cols}
             ohe_dict[tenure] = 1
             ohe_dict[house_type] = 1
-            ohe_dict["Transactions"] = 0  # 如果训练有 Transactions 列
+            ohe_dict["Transactions"] = 0  # If training data has Transactions column
             new_data = pd.DataFrame([{
                 "Township": township,
                 "Area": area,
@@ -121,12 +121,12 @@ if st.button("Predict Price"):
             }])
 
         # ------------------------------
-        # 预测
+        # Predict
         # ------------------------------
         predicted_price = chosen_model.predict(new_data)
 
         # ------------------------------
-        # 显示结果和图片
+        # Display results and image
         # ------------------------------
         col1, col2 = st.columns([1,1])
         with col1:
